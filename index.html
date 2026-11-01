@@ -1,5 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>런 퀘스트</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}</style></head><body><title>런 퀘스트</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -215,6 +214,16 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .dcard.locked{background:transparent}
 .dex h2,.done h2{font-family:var(--f-display)}
 .back{color:var(--ice)}
+.b-lav{background:rgba(190,160,255,.16);color:#c9b3ff}
+.field.dim{opacity:.5}
+.chip.tl{left:4px;right:auto;top:4px;bottom:auto}
+.chip.tr{right:4px;top:4px;bottom:auto}
+.chip.warn{color:#2a1d00;background:var(--gold);border-color:var(--gold)}
+.rdmode{position:absolute;left:4px;bottom:4px;min-height:28px;padding:3px 12px;font-size:11px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:999px}
+.mhead{flex-wrap:wrap}
+.mdir{display:inline-flex;align-items:center;gap:6px}
+.mdir svg{flex:none;color:var(--gold);transition:transform .25s}
+.done.free .log th:nth-child(2),.done.free .log td:nth-child(2),.done.free .log th:nth-child(3),.done.free .log td:nth-child(3){display:none}
 </style>
 
 <main class="wrap">
@@ -248,30 +257,73 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="goal-field">
       <div class="top"><span class="badge b-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></span><span class="lab">목표</span><span class="hint" id="goal-hint"></span></div>
       <div class="seg" role="group" aria-label="목표 종류">
         <button id="g-dist" aria-pressed="true">거리</button>
         <button id="g-time" aria-pressed="false">시간</button>
-        <button id="g-dest" aria-pressed="false">도착지</button>
+        <button id="g-free" aria-pressed="false">자유</button>
       </div>
       <div class="stepper" id="goal-step">
         <button id="goal-dn" aria-label="목표 줄이기">−</button>
         <div class="val num"><span id="goal-val"></span></div>
         <button id="goal-up" aria-label="목표 늘리기">+</button>
       </div>
+      <p class="note" id="free-note" hidden>거리와 시간을 화면에 표시하지 않고 목표도 없어요. 몬스터만 쫓으며 마음대로 달리다가 종료 버튼을 누르면 끝나요. 달린 거리는 보이지 않아도 레벨 진행에는 반영돼요.</p>
+    </div>
+
+    <div class="field" id="dest-field">
+      <div class="top"><span class="badge b-mint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span class="lab">도착지</span><span class="hint" id="dest-hint"></span></div>
+      <div class="seg" role="group" aria-label="도착지">
+        <button id="d-none" aria-pressed="true">없음</button>
+        <button id="d-place" aria-pressed="false">장소 지정</button>
+        <button id="d-loop" aria-pressed="false">출발점 왕복</button>
+      </div>
       <div class="destbox" id="destbox" hidden>
         <div class="dest-now"><b id="dest-name"></b><span id="dest-sub"></span> <a id="dest-link" target="_blank" rel="noopener" hidden>지도에서 확인</a></div>
-        <div class="dest-actions">
-          <button id="dest-here">현재 위치를<br>도착지로</button>
-          <button id="dest-loop">출발점으로<br>돌아오기</button>
-        </div>
+        <div class="dest-actions"><button id="dest-here" style="grid-column:1/-1">현재 위치를 도착지로</button></div>
         <div class="dest-search">
           <input id="dest-q" type="text" placeholder="장소 이름, 좌표, 지도 링크" aria-label="도착지 검색" autocomplete="off" enterkeyhint="search">
           <button id="dest-go">찾기</button>
         </div>
         <ul class="dest-res" id="dest-res"></ul>
         <p class="note" id="dest-msg"></p>
+      </div>
+      <div class="destbox" id="loopbox" hidden>
+        <div class="dest-now"><b>출발점으로 돌아오기</b><span>왕복 거리의 절반쯤 달리면 되돌아오고, 출발점에 도착하면 끝나요.</span></div>
+        <div class="stepper">
+          <button id="lp-dn" aria-label="왕복 거리 줄이기">−</button>
+          <div class="val num"><span id="lp-val"></span><small>왕복 거리</small></div>
+          <button id="lp-up" aria-label="왕복 거리 늘리기">+</button>
+        </div>
+      </div>
+      <p class="note" id="dest-note" hidden>도착지를 정하면 도착했을 때 원정이 끝나고 보스 몬스터가 기다려요. 위의 목표(거리, 시간, 자유)는 쓰이지 않아요.</p>
+    </div>
+
+    <div class="field" id="area-field">
+      <div class="top"><span class="badge b-lav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3.2 3.2"/><circle cx="12" cy="12" r="2.3" fill="currentColor"/></svg></span><span class="lab">러닝 영역</span><span class="hint" id="area-hint"></span></div>
+      <div class="seg" role="group" aria-label="러닝 영역">
+        <button id="a-off" aria-pressed="true">제한 없음</button>
+        <button id="a-on" aria-pressed="false">영역 지정</button>
+      </div>
+      <div class="destbox" id="area-box" hidden>
+        <div class="top" style="gap:8px"><span class="lab" style="font-size:16px">반경</span><span class="big-val num" id="area-r" style="font-size:26px;color:var(--gold)"></span></div>
+        <input type="range" id="area-range" min="100" max="2000" step="100" aria-label="영역 반경(미터)">
+        <p class="note">몬스터가 이 원 안에만 나타나요. 너무 좁으면 가까운 몬스터만 나와요. 원은 레이더에 점선으로 보여요.</p>
+        <div class="seg" role="group" aria-label="영역 중심">
+          <button id="ac-start" aria-pressed="true">시작 위치 중심</button>
+          <button id="ac-custom" aria-pressed="false">장소 지정</button>
+        </div>
+        <div id="ac-pick" hidden style="display:grid;gap:10px">
+          <div class="dest-now"><b id="ar-name"></b><span id="ar-sub"></span></div>
+          <div class="dest-actions"><button id="ar-here" style="grid-column:1/-1">현재 위치를 중심으로</button></div>
+          <div class="dest-search">
+            <input id="ar-q" type="text" placeholder="장소 이름, 좌표, 지도 링크" aria-label="영역 중심 검색" autocomplete="off" enterkeyhint="search">
+            <button id="ar-go">찾기</button>
+          </div>
+          <ul class="dest-res" id="ar-res"></ul>
+          <p class="note" id="ar-msg"></p>
+        </div>
       </div>
     </div>
 
@@ -311,6 +363,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <canvas id="radar" aria-label="몬스터 위치 레이더"></canvas>
       <div class="banner" id="banner" hidden></div>
       <div class="chip num" id="gps-chip"></div>
+      <div class="chip num tr" id="hd-chip"></div>
+      <div class="chip num tl" id="area-chip" hidden></div>
+      <button class="rdmode" id="rd-mode"></button>
     </div>
 
     <div class="mpanel" id="p-loc">
@@ -319,7 +374,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     </div>
 
     <div class="mpanel" id="p-hunt" hidden>
-      <div class="mhead"><span class="mname" id="m-name"></span><span class="mdir" id="m-dir"></span></div>
+      <div class="mhead"><span class="mname" id="m-name"></span><span class="mdir"><svg id="m-arrow" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l7 17-7-4.2-7 4.2z" fill="currentColor"/></svg><span id="m-dir"></span></span></div>
       <div class="mdist num" id="m-dist"></div>
       <div class="mbar"><i id="m-bar"></i></div>
       <div class="mrow num"><span class="bonus" id="m-bonus"></span><span id="m-elapsed"></span></div>
@@ -398,7 +453,14 @@ var store={
   get:function(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
   set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
-var cfg=Object.assign({paceSec:360,goalType:'dist',goalDist:3,goalMin:30,rest:30,mode:'gps',simSpeed:30,dest:null},store.get('rq_cfg',{}));
+var cfg=Object.assign({paceSec:360,goalType:'dist',goalDist:3,goalMin:30,rest:30,mode:'gps',simSpeed:30,dest:null,hdUp:true,area:null},store.get('rq_cfg',{}));
+cfg.area=Object.assign({on:false,r:500,center:'start',c:null},cfg.area||{});
+if(cfg.goalType==='dest'){cfg.goalType='dist';cfg.destMode=(cfg.dest&&cfg.dest.loop)?'loop':'place'}
+if(cfg.dest&&cfg.dest.loop)cfg.dest=null;
+if(!cfg.destMode)cfg.destMode='none';
+if(!cfg.loopKm)cfg.loopKm=3;
+function destOn(){return cfg.destMode==='place'||cfg.destMode==='loop'}
+function isFree(){return cfg.goalType==='free'&&!destOn()}
 var prof=Object.assign({exp:0,runs:0,kills:0,km:0,dex:{}},store.get('rq_prof',{}));
 
 /* ---------- format ---------- */
@@ -654,33 +716,53 @@ function parseCoords(t){
   return {lat:lat,lng:lng};
 }
 function destMsg(t){$('#dest-msg').textContent=t||''}
-function setDest(d){cfg.dest=d;save();$('#dest-res').innerHTML='';destMsg('');paintSetup()}
-function paintDest(){
-  var d=cfg.dest,nm=$('#dest-name'),sb=$('#dest-sub'),lk=$('#dest-link');
+function setDest(d){cfg.dest=d;cfg.destMode='place';save();$('#dest-res').innerHTML='';destMsg('');paintSetup()}
+function paintDestField(){
+  var m=cfg.destMode,d=cfg.dest;
+  ['none','place','loop'].forEach(function(k){$('#d-'+k).setAttribute('aria-pressed',m===k)});
+  $('#destbox').hidden=m!=='place';$('#loopbox').hidden=m!=='loop';$('#dest-note').hidden=m==='none';
+  $('#dest-hint').textContent=m==='none'?'정하지 않음':m==='loop'?'출발점으로 돌아오기':(d?(d.label||'선택한 위치'):'장소를 정해 주세요');
+  $('#lp-val').textContent=cfg.loopKm.toFixed(1)+' km';
+  var nm=$('#dest-name'),sb=$('#dest-sub'),lk=$('#dest-link');
   if(!d){nm.textContent='도착지를 아직 정하지 않았어요';sb.textContent='아래에서 정해 주세요. 도착지에서는 보스 몬스터가 기다려요.';lk.hidden=true}
-  else if(d.loop){nm.textContent='출발점으로 돌아오기';sb.textContent='왕복 거리의 절반쯤 달리면 되돌아오고, 출발점에 도착하면 끝나요.';lk.hidden=true}
   else{nm.textContent=d.label||'선택한 위치';sb.textContent=d.lat.toFixed(4)+', '+d.lng.toFixed(4);lk.hidden=false;lk.href='https://map.kakao.com/link/map/'+encodeURIComponent(d.label||'도착지')+','+d.lat.toFixed(6)+','+d.lng.toFixed(6)}
 }
-function findPlace(){
-  var q=$('#dest-q').value.trim();
-  if(!q){destMsg('장소 이름이나 좌표를 입력해 주세요.');return}
+function searchPlace(inp,resEl,msg,pick,whatTo){
+  var q=inp.value.trim();
+  if(!q){msg('장소 이름이나 좌표를 입력해 주세요.');return}
   var c=parseCoords(q);
-  if(c){c.label='입력한 좌표';setDest(c);destMsg('입력한 좌표를 도착지로 정했어요.');return}
-  destMsg('찾는 중이에요…');$('#dest-res').innerHTML='';
+  if(c){c.label='입력한 좌표';pick(c);msg('입력한 좌표를 '+whatTo+' 정했어요.');return}
+  msg('찾는 중이에요…');resEl.innerHTML='';
   fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=ko&q='+encodeURIComponent(q))
     .then(function(r){if(!r.ok)throw new Error('http');return r.json()})
     .then(function(list){
-      if(!list.length){destMsg('검색 결과가 없어요. 더 자세한 이름이나 좌표로 찾아 보세요.');return}
-      destMsg('도착지를 골라 주세요. (검색: OpenStreetMap)');
-      var ul=$('#dest-res');ul.innerHTML='';
+      if(!list.length){msg('검색 결과가 없어요. 더 자세한 이름이나 좌표로 찾아 보세요.');return}
+      msg('장소를 골라 주세요. (검색: OpenStreetMap)');
+      resEl.innerHTML='';
       list.forEach(function(it){
         var li=document.createElement('li'),b=document.createElement('button');
         b.textContent=it.display_name;
-        b.onclick=function(){setDest({lat:parseFloat(it.lat),lng:parseFloat(it.lon),label:it.name||String(it.display_name).split(',')[0]})};
-        li.appendChild(b);ul.appendChild(li);
+        b.onclick=function(){pick({lat:parseFloat(it.lat),lng:parseFloat(it.lon),label:it.name||String(it.display_name).split(',')[0]})};
+        li.appendChild(b);resEl.appendChild(li);
       });
     })
-    .catch(function(){destMsg('이 화면에서는 장소 검색을 쓸 수 없어요. 좌표나 지도 링크를 붙여 넣거나, 배포한 https 주소에서 검색해 보세요.')});
+    .catch(function(){msg('이 화면에서는 장소 검색을 쓸 수 없어요. 좌표나 지도 링크를 붙여 넣거나, 배포한 https 주소에서 검색해 보세요.')});
+}
+function findPlace(){searchPlace($('#dest-q'),$('#dest-res'),destMsg,setDest,'도착지로')}
+function arMsg(t){$('#ar-msg').textContent=t||''}
+function setAreaCenter(d){cfg.area.center='custom';cfg.area.c=d;save();$('#ar-res').innerHTML='';arMsg('');paintSetup()}
+function paintArea(){
+  var a=cfg.area;
+  $('#area-field').hidden=destOn();
+  $('#a-off').setAttribute('aria-pressed',!a.on);$('#a-on').setAttribute('aria-pressed',a.on);
+  $('#area-box').hidden=!a.on;
+  $('#area-hint').textContent=a.on?'반경 '+fmtDist(a.r):'어디든 나타나요';
+  $('#area-range').value=a.r;$('#area-range').style.setProperty('--p',((a.r-100)/1900*100)+'%');
+  $('#area-r').textContent=fmtDist(a.r);
+  $('#ac-start').setAttribute('aria-pressed',a.center==='start');$('#ac-custom').setAttribute('aria-pressed',a.center==='custom');
+  $('#ac-pick').hidden=a.center!=='custom';
+  $('#ar-name').textContent=a.c?(a.c.label||'선택한 위치'):'중심을 아직 정하지 않았어요';
+  $('#ar-sub').textContent=a.c?a.c.lat.toFixed(4)+', '+a.c.lng.toFixed(4):'';
 }
 function paintThumbs(){
   var box=$('#dex-thumbs');box.innerHTML='';var lv=curLv();
@@ -695,13 +777,15 @@ function paintSetup(){
   paintThumbs();
   $('#pace-val').textContent=fmtPace(cfg.paceSec);
   $('#pace-sub').textContent='/km · '+(3600/cfg.paceSec).toFixed(1)+' km/h';
-  var gt=cfg.goalType,loop=gt==='dest'&&cfg.dest&&cfg.dest.loop;
-  ['dist','time','dest'].forEach(function(k){$('#g-'+k).setAttribute('aria-pressed',gt===k)});
-  $('#goal-step').hidden=!(gt!=='dest'||loop);
-  $('#destbox').hidden=gt!=='dest';
-  $('#goal-hint').textContent=gt==='dist'?'달릴 거리':gt==='time'?'달릴 시간':(loop?'왕복 거리':'끝나는 지점');
+  var gt=cfg.goalType,don=destOn(),loop=cfg.destMode==='loop';
+  ['dist','time','free'].forEach(function(k){$('#g-'+k).setAttribute('aria-pressed',gt===k)});
+  $('#goal-step').hidden=!(gt==='dist'||gt==='time');
+  $('#free-note').hidden=gt!=='free'||don;
+  $('#goal-field').classList.toggle('dim',don);
+  $('#goal-hint').textContent=don?'도착지로 대신해요':gt==='dist'?'달릴 거리':gt==='time'?'달릴 시간':'목표 없음';
   $('#goal-val').textContent=gt==='time'?cfg.goalMin+' 분':cfg.goalDist.toFixed(1)+' km';
-  if(gt==='dest')paintDest();
+  paintDestField();
+  paintArea();
   $('#rest').value=cfg.rest;$('#rest').style.setProperty('--p',(cfg.rest/120*100)+'%');
   $('#rest-val').textContent=cfg.rest+'초';
   Array.prototype.forEach.call($('#rest-chips').children,function(b){b.setAttribute('aria-pressed',Number(b.dataset.v)===cfg.rest)});
@@ -711,22 +795,28 @@ function paintSetup(){
   Array.prototype.forEach.call($('#sim-chips').children,function(b){b.setAttribute('aria-pressed',Number(b.dataset.v)===cfg.simSpeed)});
   $('#mode-note').textContent=demo
     ?'가상의 러너가 몬스터를 향해 자동으로 달려요. 게임 흐름을 미리 확인할 때 쓰세요. 속도 배율을 고를 수 있어요.'
-    :'실제 위치로 달려요. 처음에 위치 권한을 허용해 주세요. 권한이 없으면 데모 모드로 시작합니다.';
+    :'실제 위치로 달려요. 처음에 위치와 모션 센서 권한을 물어볼 수 있어요. 방향은 달리는 중에는 GPS 이동 방향, 멈춰 있을 때는 나침반을 써요. 위치 권한이 없으면 데모 모드로 시작합니다.';
   var d=150/cfg.paceSec*1000,txt;
-  if(gt==='dest'){
+  if(don){
     txt=loop?'반환점을 돌아 출발점에 도착하면 <b>보스 몬스터</b>가 기다려요!':'도착지에 닿으면 <b>보스 몬스터</b>가 기다려요!';
     txt+='<span class="sub">가는 길에도 몬스터가 나타나요. 한 마리까지 평균 약 '+Math.round(d/10)*10+'m</span>';
   }else{
     var n=gt==='dist'?Math.max(1,Math.round(cfg.goalDist*1000/d)):Math.max(1,Math.round(cfg.goalMin*60/(150+cfg.rest)));
-    txt='몬스터 약 <b>'+n+'마리</b>가 기다리고 있어요!<span class="sub">한 마리까지 평균 약 '+Math.round(d/10)*10+'m, 달려서 약 2분 30초</span>';
+    txt=isFree()?'<b>자유 달리기</b>예요. 몬스터는 계속 나타나요!<span class="sub">종료 버튼을 누를 때까지 이어져요</span>':'몬스터 약 <b>'+n+'마리</b>가 기다리고 있어요!<span class="sub">한 마리까지 평균 약 '+Math.round(d/10)*10+'m, 달려서 약 2분 30초</span>';
   }
   $('#forecast').innerHTML=txt;
   $('#start-msg').hidden=true;
 }
 function canStart(){
-  if(cfg.goalType==='dest'&&!cfg.dest&&cfg.mode==='gps'){
-    var m=$('#start-msg');m.textContent='도착지를 먼저 정해 주세요. (또는 데모 모드로 체험해 보세요)';m.hidden=false;
+  var m=$('#start-msg');
+  if(cfg.destMode==='place'&&!cfg.dest&&cfg.mode==='gps'){
+    m.textContent='도착지를 먼저 정해 주세요. (또는 데모 모드로 체험해 보세요)';m.hidden=false;
     try{$('#destbox').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}
+    return false;
+  }
+  if(!destOn()&&cfg.area.on&&cfg.area.center==='custom'&&!cfg.area.c&&cfg.mode==='gps'){
+    m.textContent='영역 중심을 먼저 정해 주세요. (또는 시작 위치 중심으로 바꿔 보세요)';m.hidden=false;
+    try{$('#area-field').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}
     return false;
   }
   return true;
@@ -743,8 +833,12 @@ function initSetup(){
   hold($('#goal-up'),function(){stepGoal(1)});
   $('#g-dist').onclick=function(){cfg.goalType='dist';paintSetup()};
   $('#g-time').onclick=function(){cfg.goalType='time';paintSetup()};
-  $('#g-dest').onclick=function(){cfg.goalType='dest';paintSetup()};
-  $('#dest-loop').onclick=function(){setDest({loop:true,label:'출발점'})};
+  $('#g-free').onclick=function(){cfg.goalType='free';paintSetup()};
+  $('#d-none').onclick=function(){cfg.destMode='none';save();paintSetup()};
+  $('#d-place').onclick=function(){cfg.destMode='place';save();paintSetup()};
+  $('#d-loop').onclick=function(){cfg.destMode='loop';save();paintSetup()};
+  hold($('#lp-dn'),function(){cfg.loopKm=clamp(Math.round((cfg.loopKm-0.5)*10)/10,1,42);save();paintSetup()});
+  hold($('#lp-up'),function(){cfg.loopKm=clamp(Math.round((cfg.loopKm+0.5)*10)/10,1,42);save();paintSetup()});
   $('#dest-here').onclick=function(){
     if(!navigator.geolocation){destMsg('이 기기에서는 위치를 쓸 수 없어요.');return}
     destMsg('현재 위치를 찾는 중이에요…');
@@ -754,6 +848,19 @@ function initSetup(){
     },function(){destMsg('위치를 가져오지 못했어요. 위치 권한을 확인하거나 좌표를 직접 넣어 주세요.')},{enableHighAccuracy:true,timeout:15000,maximumAge:10000});
   };
   $('#dest-go').onclick=findPlace;
+  $('#a-off').onclick=function(){cfg.area.on=false;save();paintSetup()};
+  $('#a-on').onclick=function(){cfg.area.on=true;save();paintSetup()};
+  $('#area-range').oninput=function(){cfg.area.r=Number(this.value);save();paintSetup()};
+  $('#ac-start').onclick=function(){cfg.area.center='start';save();paintSetup()};
+  $('#ac-custom').onclick=function(){cfg.area.center='custom';save();paintSetup()};
+  $('#ar-go').onclick=function(){searchPlace($('#ar-q'),$('#ar-res'),arMsg,setAreaCenter,'영역 중심으로')};
+  $('#ar-q').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('#ar-go').onclick()}});
+  $('#ar-here').onclick=function(){
+    if(!navigator.geolocation){arMsg('이 기기에서는 위치를 쓸 수 없어요.');return}
+    arMsg('현재 위치를 찾는 중이에요…');
+    navigator.geolocation.getCurrentPosition(function(p){setAreaCenter({lat:p.coords.latitude,lng:p.coords.longitude,label:'현재 위치'});arMsg('현재 위치를 영역 중심으로 정했어요.')},function(){arMsg('위치를 가져오지 못했어요. 위치 권한을 확인하거나 좌표를 직접 넣어 주세요.')},{enableHighAccuracy:true,timeout:15000,maximumAge:10000});
+  };
+  $('#rd-mode').onclick=function(){cfg.hdUp=!cfg.hdUp;save();if(R)render()};
   $('#dest-q').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();findPlace()}});
   $('#rest').oninput=function(){cfg.rest=Number(this.value);paintSetup()};
   CHIP_REST.forEach(function(v){var b=document.createElement('button');b.textContent=v+'초';b.dataset.v=v;b.onclick=function(){cfg.rest=v;paintSetup()};$('#rest-chips').appendChild(b)});
@@ -857,14 +964,73 @@ function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 function setNotice(msg){var n=$('#notice');if(msg){n.textContent=msg;n.hidden=false}else n.hidden=true}
 function show(id){['#s-setup','#s-run','#s-dex','#s-done'].forEach(function(s){$(s).hidden=(s!==id)});window.scrollTo(0,0);if(id==='#s-setup')startHero();else stopHero()}
 
+/* ---------- heading (나침반 + GPS 진행방향) ---------- */
+var cmp={on:false,denied:false};
+function wrapAng(x){return ((x%360)+360)%360}
+function angDiff(a,b){return ((b-a+540)%360)-180}
+function compassHeading(alpha,beta,gamma){
+  var x=(beta||0)*D2R,y=(gamma||0)*D2R,z=(alpha||0)*D2R;
+  var cY=Math.cos(y),cZ=Math.cos(z),sX=Math.sin(x),sY=Math.sin(y),sZ=Math.sin(z);
+  var Vx=-cZ*sY-sZ*sX*cY,Vy=-sZ*sY+cZ*sX*cY;
+  if(Math.hypot(Vx,Vy)<0.3)return wrapAng(360-(alpha||0));
+  return wrapAng(Math.atan2(Vx,Vy)/D2R);
+}
+function declin(){var p=R&&R.pos;if(p&&p.lat>32.5&&p.lat<39.5&&p.lng>123.5&&p.lng<132.5)return -8.3;return 0}
+function onOri(e){
+  if(!R||R.phase==='done'||R.demo)return;
+  var h=null;
+  if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading))h=e.webkitCompassHeading;
+  else if((e.type==='deviceorientationabsolute'||e.absolute===true)&&e.alpha!=null&&e.beta!=null&&e.gamma!=null)h=compassHeading(e.alpha,e.beta,e.gamma);
+  if(h==null)return;
+  h=wrapAng(h+declin());
+  var now=performance.now();
+  R.cmpHd=(R.cmpHd==null||now-R.cmpT>3000)?h:wrapAng(R.cmpHd+angDiff(R.cmpHd,h)*0.18);
+  R.cmpT=now;
+}
+function startCompass(){
+  if(cmp.on||typeof window.addEventListener!=='function')return;
+  var go=function(){window.addEventListener('deviceorientationabsolute',onOri,true);window.addEventListener('deviceorientation',onOri,true);cmp.on=true};
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+      DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')go();else cmp.denied=true}).catch(function(){cmp.denied=true});
+    }else go();
+  }catch(e){}
+}
+function stopCompass(){
+  if(!cmp.on)return;
+  window.removeEventListener('deviceorientationabsolute',onOri,true);window.removeEventListener('deviceorientation',onOri,true);cmp.on=false;
+}
+function noteMove(p,d){
+  var now=performance.now(),dt=(now-(R.lastMoveT||now))/1000;R.lastMoveT=now;
+  var spd=(p.speed!=null&&!isNaN(p.speed))?p.speed:(dt>0.15?d/dt:0);
+  R.speed=spd;R.spdT=now;
+  if(p.hd!=null&&!isNaN(p.hd)&&spd>=1.5){R.gpsHd=p.hd;R.gpsHdT=now}
+  if(!R.anchor)R.anchor={lat:p.lat,lng:p.lng};
+  else if(hav(R.anchor,p)>=12&&p.acc<=30){R.mvHd=bearing(R.anchor,p);R.mvT=now;R.anchor={lat:p.lat,lng:p.lng}}
+}
+function updHeading(){
+  if(!R)return;
+  var now=performance.now(),h=null,src='';
+  var moving=R.speed>=1.5&&now-R.spdT<4000;
+  if(moving&&R.gpsHd!=null&&now-R.gpsHdT<4000){h=R.gpsHd;src='gps'}
+  else if(moving&&R.mvHd!=null&&now-R.mvT<8000){h=R.mvHd;src='mv'}
+  else if(!R.demo&&R.cmpHd!=null&&now-R.cmpT<2500){h=R.cmpHd;src='cmp'}
+  else if(R.mvHd!=null){h=R.mvHd;src='mv'}
+  if(h==null){R.hdSrc='';return}
+  R.heading=R.heading==null?h:wrapAng(R.heading+angDiff(R.heading,h)*0.4);
+  R.hdSrc=src;
+}
+function relText(r){var a=Math.abs(r),sd=r>0?'오른쪽':'왼쪽';if(a<22)return '정면';if(a<67)return sd+' 앞';if(a<112)return sd;if(a<158)return sd+' 뒤';return '뒤쪽'}
+
 function startRun(){
   if(!canStart())return;
   save();
+  if(cfg.mode!=='demo')startCompass();
   try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
   R={phase:'locating',paused:false,active:0,hunt:0,pausedMs:0,dist:0,huntDist:0,kills:0,bonus:0,exp:0,
      pos:null,last:null,heading:null,trail:[],monster:null,restLeft:0,restTotal:0,log:[],demo:false,watch:null,wl:null,
-     lastTick:performance.now(),rangeDisp:100,acc:null,lastKill:null,startLv:curLv(),savedDist:0,
-     loop:cfg.goalType==='dest'&&!!(cfg.dest&&cfg.dest.loop),returning:false,fin:null,finStart:null,reachedDest:false};
+     lastTick:performance.now(),rangeDisp:100,acc:null,lastKill:null,startLv:curLv(),savedDist:0,cmpHd:null,cmpT:0,gpsHd:null,gpsHdT:0,mvHd:null,mvT:0,anchor:null,speed:0,spdT:0,hdSrc:'',lastMoveT:0,hdDisp:null,area:null,
+     loop:cfg.destMode==='loop',returning:false,fin:null,finStart:null,reachedDest:false};
   show('#s-run');setNotice('');$('#pause').hidden=true;
   $('#banner').hidden=true;
   $('#btn-end').innerHTML='종료';
@@ -883,7 +1049,7 @@ function startGps(){
   var got=false;
   try{
     R.watch=navigator.geolocation.watchPosition(function(p){
-      got=true;onPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy||999});
+      got=true;onPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy||999,speed:p.coords.speed,hd:p.coords.heading});
     },function(err){
       if(!got&&!R.demo){stopGps();startDemo(err&&err.code===1?'위치 권한이 없어 데모 모드로 시작했어요. 실제 달리기는 브라우저에서 위치 권한을 허용해 주세요.':'위치를 찾지 못해 데모 모드로 시작했어요.')}
       else if(got){setNotice('GPS 신호가 약해요. 하늘이 트인 곳으로 이동해 보세요.')}
@@ -902,7 +1068,11 @@ function onPos(p){
     R.pos=p;
     if(p.acc>80){render();return}
     R.last=p;
-    if(cfg.goalType==='dest'){
+    if(cfg.area&&cfg.area.on&&!destOn()){
+      var ctr=(cfg.area.center==='custom'&&cfg.area.c&&!R.demo)?{lat:cfg.area.c.lat,lng:cfg.area.c.lng}:{lat:p.lat,lng:p.lng};
+      R.area={c:ctr,r:cfg.area.r};
+    }
+    if(destOn()){
       if(R.loop)R.fin={lat:p.lat,lng:p.lng};
       else if(R.demo||!cfg.dest)R.fin=dest(p,1500,Math.random()*360);
       else R.fin={lat:cfg.dest.lat,lng:cfg.dest.lng};
@@ -915,7 +1085,7 @@ function onPos(p){
     if(d>=100){R.last=p}
     else if(p.acc<=40&&d>=3){
       R.dist+=d;if(R.phase==='hunting')R.huntDist+=d;
-      if(d>=5)R.heading=bearing(R.last,p);
+      noteMove(p,d);
       R.trail.push({lat:p.lat,lng:p.lng});if(R.trail.length>90)R.trail.shift();
       R.last=p;
     }
@@ -932,12 +1102,12 @@ function checkArrive(){
 function bossIdx(){var lv=curLv(),b=0;MON.forEach(function(m,i){if(m.lv<=lv)b=i});return b}
 function spawn(){
   var win=90+Math.random()*120,d=win/cfg.paceSec*1000,brg=null,boss=false,fixed=null;
-  if(cfg.goalType==='dist'){
+  if(cfg.goalType==='dist'&&!destOn()){
     var rem=cfg.goalDist*1000-R.dist;
     if(rem<60){finish();return}
     if(d>rem)d=Math.max(60,rem);
-  }else if(cfg.goalType==='dest'&&R.fin){
-    if(R.loop&&!R.returning&&R.dist>=cfg.goalDist*500)R.returning=true;
+  }else if(destOn()&&R.fin){
+    if(R.loop&&!R.returning&&R.dist>=cfg.loopKm*500)R.returning=true;
     if(!R.loop||R.returning){
       var rm=hav(R.pos,R.fin);
       if(R.finStart==null)R.finStart=Math.max(rm,1);
@@ -947,10 +1117,22 @@ function spawn(){
     }
   }
   if(!boss)d=Math.max(60,d);
+  if(R.area&&!boss)d=Math.min(d,Math.max(60,R.area.r*0.9));
+  if(brg==null)brg=R.heading!=null?R.heading+(Math.random()-0.5)*120:Math.random()*360;
+  var pt=fixed?{lat:fixed.lat,lng:fixed.lng}:null;
+  if(!pt){
+    if(R.area){
+      for(var k=0;k<18&&!pt;k++){
+        var bb=k<6?brg+(Math.random()-0.5)*120:(k<12?Math.random()*360:bearing(R.pos,R.area.c)+(Math.random()-0.5)*40);
+        var cand=dest(R.pos,d,bb);
+        if(hav(R.area.c,cand)<=R.area.r*0.96)pt=cand;
+      }
+      if(!pt){var dc=hav(R.pos,R.area.c);d=Math.max(40,Math.min(d,dc));pt=dest(R.pos,d,bearing(R.pos,R.area.c))}
+    }else pt=dest(R.pos,d,brg);
+  }
+  if(!boss)d=Math.max(30,hav(R.pos,pt));
   var sec=d/1000*cfg.paceSec;
   var idx=boss?bossIdx():pickMonster(sec);
-  if(brg==null)brg=R.heading!=null?R.heading+(Math.random()-0.5)*120:Math.random()*360;
-  var pt=fixed?{lat:fixed.lat,lng:fixed.lng}:dest(R.pos,d,brg);
   R.monster={lat:pt.lat,lng:pt.lng,d0:d,target:sec*1000,elapsed:0,idx:idx,boss:boss};
   R.phase='hunting';
   var dd=hav(R.pos,R.monster);R.rangeDisp=Math.max(100,dd*1.3);
@@ -958,7 +1140,9 @@ function spawn(){
 }
 function reroll(){
   if(!R||R.phase!=='hunting'||R.paused||!R.monster||R.monster.boss)return;
-  var m=R.monster,pt=dest(R.pos,m.d0,Math.random()*360);
+  var m=R.monster,pt=null;
+  for(var k=0;k<14&&!pt;k++){var cd=dest(R.pos,m.d0,Math.random()*360);if(!R.area||hav(R.area.c,cd)<=R.area.r*0.96)pt=cd}
+  if(!pt)pt=dest(R.pos,m.d0,bearing(R.pos,R.area.c));
   m.lat=pt.lat;m.lng=pt.lng;m.elapsed=0;
   R.rangeDisp=Math.max(100,m.d0*1.3);
 }
@@ -994,7 +1178,7 @@ function banner(a,b,ms){
   el.style.animation='none';void el.offsetWidth;el.style.animation='';
   clearTimeout(bannerT);bannerT=setTimeout(function(){el.hidden=true},ms||1900);
 }
-function goalDone(){return cfg.goalType==='dist'?R.dist>=cfg.goalDist*1000:cfg.goalType==='time'?R.active>=cfg.goalMin*60000:false}
+function goalDone(){return destOn()?false:cfg.goalType==='dist'?R.dist>=cfg.goalDist*1000:cfg.goalType==='time'?R.active>=cfg.goalMin*60000:false}
 
 function simStep(dt){
   if(R.phase!=='hunting'||!R.monster)return;
@@ -1010,6 +1194,7 @@ function tick(){
   if(R.paused){R.pausedMs+=dt;paintPause();return}
   if(R.phase==='locating'){return}
   R.active+=dt;
+  updHeading();
   if(R.phase==='hunting'){
     R.hunt+=dt;if(R.monster)R.monster.elapsed+=dt;
     if(R.demo)simStep(dt);
@@ -1035,12 +1220,12 @@ function paintPause(){$('#pz-time').textContent='정지 '+fmtTime(R.pausedMs)}
 /* ---------- finish ---------- */
 function finish(){
   if(!R||R.phase==='done')return;
-  R.phase='done';stopGps();unlock();clearInterval(tickIv);
+  R.phase='done';stopGps();stopCompass();unlock();clearInterval(tickIv);
   $('#pause').hidden=true;$('#radar-wrap').classList.remove('frozen');
   var before=R.startLv;
   prof.km+=(R.dist-R.savedDist)/1000;R.savedDist=R.dist;prof.runs++;store.set('rq_prof',prof);
   var after=curLv();
-  $('#d-title').textContent=R.reachedDest?'도착 완료':(goalDone()?'목표 달성':'원정 종료');
+  $('#d-title').textContent=R.reachedDest?'도착 완료':(isFree()?'자유 달리기 종료':(goalDone()?'목표 달성':'원정 종료'));
   $('#d-exp').textContent=R.exp;
   var lu=$('#d-lvup');if(after>before){lu.textContent='레벨 업! Lv.'+before+' → Lv.'+after;lu.hidden=false}else lu.hidden=true;
   paintLevel($('#d-lv'),$('#d-meta'),$('#d-prog'));
@@ -1054,10 +1239,11 @@ function finish(){
     row.appendChild(c);row.appendChild(t);ul.appendChild(row);
   });
   $('#d-dexs').textContent=dexSummary();
-  $('#d-dist').textContent=(R.dist/1000).toFixed(2)+' km';
-  $('#d-time').textContent=fmtTime(R.active);
-  $('#d-pace').textContent=R.huntDist>50?fmtPace(R.hunt/R.huntDist):"--'--\"";
-  $('#d-kills').textContent=R.kills+'마리 · '+R.bonus;
+  var fr=isFree(),dcs=$('#s-done').querySelectorAll('.stats>div');
+  var sv=fr?[[R.kills+'마리','처치'],[String(R.bonus),'보너스 처치'],[String(R.exp),'획득 EXP'],['Lv.'+after,'현재 레벨']]
+           :[[(R.dist/1000).toFixed(2)+' km','거리'],[fmtTime(R.active),'시간'],[R.huntDist>50?fmtPace(R.hunt/R.huntDist):"--'--\"",'평균 페이스'],[R.kills+'마리 · '+R.bonus,'처치 · 보너스']];
+  for(var si=0;si<4;si++){dcs[si].children[0].textContent=sv[si][0];dcs[si].children[1].textContent=sv[si][1]}
+  $('#s-done').classList.toggle('free',fr);
   var rows=R.log.map(function(r){return '<tr><td>'+r.name+(r.onTime?' <span class="gold">보너스</span>':'')+'</td><td class="num">'+Math.round(r.d)+'m</td><td class="num">'+fmtTime(r.ms)+'</td><td class="num">+'+r.exp+'</td></tr>'}).join('');
   $('#d-log').innerHTML=rows||'<tr><td colspan="4" style="color:var(--mute)">처치한 몬스터가 없어요.</td></tr>';
   beep([523,659,784,1047]);buzz([100,50,100,50,200]);
@@ -1068,20 +1254,27 @@ function finish(){
 var DIRS=['북','북동','동','남동','남','남서','서','북서'],ARR=['↑','↗','→','↘','↓','↙','←','↖'];
 function render(){
   if(!R||R.phase==='done')return;
-  $('#h-dist').textContent=(R.dist/1000).toFixed(2);
-  $('#h-time').textContent=fmtTime(R.active);
-  $('#h-kills').textContent=R.kills;
-  $('#h-pace').textContent=R.huntDist>50?fmtPace(R.hunt/R.huntDist):"--'--\"";
-  var gt=cfg.goalType,frac=0,gtxt='';
-  if(gt==='dist'){frac=R.dist/(cfg.goalDist*1000);gtxt='목표 '+(R.dist/1000).toFixed(2)+' / '+cfg.goalDist.toFixed(1)+' km'}
-  else if(gt==='time'){frac=R.active/(cfg.goalMin*60000);gtxt='목표 '+fmtTime(R.active)+' / '+cfg.goalMin+':00'}
-  else if(R.fin&&R.pos){
-    if(R.loop&&!R.returning){var half=cfg.goalDist*500;frac=R.dist/half;gtxt='반환점까지 '+fmtDist(Math.max(0,half-R.dist))}
-    else{var rmn=hav(R.pos,R.fin);frac=1-rmn/(R.finStart||rmn||1);gtxt=(R.loop?'출발점까지 ':'도착지까지 ')+fmtDist(rmn)}
-  }else{gtxt='도착지 확인 중'}
+  var gt=cfg.goalType,frac=0,gtxt='',free=isFree();
+  var hv=free?[R.kills,R.bonus,R.exp,'Lv.'+curLv()]:[(R.dist/1000).toFixed(2),fmtTime(R.active),R.kills,R.huntDist>50?fmtPace(R.hunt/R.huntDist):"--'--\""];
+  var hl=free?['처치','보너스','EXP','레벨']:['KM','시간','처치','페이스'];
+  for(var hi=0;hi<4;hi++){var hcell=document.querySelector('.hud').children[hi];hcell.children[0].textContent=hv[hi];hcell.children[1].textContent=hl[hi]}
+  if(free){gtxt='자유 모드 · 종료 버튼으로 마쳐요'}
+  else if(destOn()){
+    if(R.fin&&R.pos){
+      if(R.loop&&!R.returning){var half=cfg.loopKm*500;frac=R.dist/half;gtxt='반환점까지 '+fmtDist(Math.max(0,half-R.dist))}
+      else{var rmn=hav(R.pos,R.fin);frac=1-rmn/(R.finStart||rmn||1);gtxt=(R.loop?'출발점까지 ':'도착지까지 ')+fmtDist(rmn)}
+    }else{gtxt='도착지 확인 중'}
+  }
+  else if(gt==='dist'){frac=R.dist/(cfg.goalDist*1000);gtxt='목표 '+(R.dist/1000).toFixed(2)+' / '+cfg.goalDist.toFixed(1)+' km'}
+  else{frac=R.active/(cfg.goalMin*60000);gtxt='목표 '+fmtTime(R.active)+' / '+cfg.goalMin+':00'}
   $('#goal-fill').style.width=clamp(frac*100,0,100)+'%';
+  document.querySelector('.goalbar').hidden=free;
   $('#goal-txt').textContent=gtxt;
   $('#gps-chip').textContent=R.demo?'데모 ×'+cfg.simSpeed:(R.acc?'GPS ±'+Math.round(R.acc)+'m':'GPS 대기');
+  $('#hd-chip').textContent=R.hdSrc==='cmp'?'나침반':(R.hdSrc==='gps'||R.hdSrc==='mv')?'이동 방향':'방향 확인 중';
+  $('#rd-mode').textContent=cfg.hdUp?'내 방향이 위 ↑':'북쪽이 위 ↑';
+  var ac=$('#area-chip');ac.hidden=!(R.area&&R.pos);
+  if(R.area&&R.pos){var dar=hav(R.area.c,R.pos),outA=dar>R.area.r;ac.textContent=outA?'영역 밖 · 중심까지 '+fmtDist(dar):'영역 안 · 중심에서 '+fmtDist(dar);ac.classList.toggle('warn',outA)}
   $('#p-loc').hidden=R.phase!=='locating';
   $('#p-hunt').hidden=R.phase!=='hunting';
   $('#p-rest').hidden=R.phase!=='resting';
@@ -1089,7 +1282,9 @@ function render(){
   if(R.phase==='hunting'&&R.monster&&R.pos){
     var m=R.monster,dn=hav(R.pos,m),b=bearing(R.pos,m),k=Math.round(b/45)%8;
     $('#m-name').textContent=(m.boss?'도착지 보스 · ':'')+MON[m.idx].name;
-    $('#m-dir').textContent=ARR[k]+' '+DIRS[k]+'쪽';
+    var dtxt=DIRS[k]+'쪽',rot=b;
+    if(R.heading!=null){var rel=angDiff(R.heading,b);dtxt=relText(rel)+' · '+dtxt;rot=rel}
+    $('#m-dir').textContent=dtxt;$('#m-arrow').style.transform='rotate('+rot+'deg)';
     $('#m-dist').textContent=fmtDist(dn);
     $('#m-bar').style.width=clamp((1-dn/m.d0)*100,0,100)+'%';
     var rem=m.target-m.elapsed,bo=$('#m-bonus');
@@ -1121,9 +1316,13 @@ function draw(ts){
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,w);
   var cx=w/2,cy=w/2,rr=w/2-6;
   var frozen=R.paused,t=frozen?0:ts;
+  if(R.heading!=null)R.hdDisp=R.hdDisp==null?R.heading:wrapAng(R.hdDisp+angDiff(R.hdDisp,R.heading)*0.2);
+  var up=(cfg.hdUp&&R.hdDisp!=null)?R.hdDisp:0,cs=Math.cos(up*D2R),sn=Math.sin(up*D2R);
+  function tf(o){return {x:o.x*cs-o.y*sn,y:o.x*sn+o.y*cs}}
   /* disc */
   ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.fillStyle=C.panel;ctx.fill();
   ctx.strokeStyle=C.line;ctx.lineWidth=1.5;ctx.stroke();
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,rr-0.5,0,Math.PI*2);ctx.clip();
   /* range */
   var m=R.monster,dn=(m&&R.pos)?hav(R.pos,m):0;
   var want=Math.max(100,dn*1.3),target=RANGES[RANGES.length-1];
@@ -1139,7 +1338,7 @@ function draw(ts){
     ctx.fillStyle=C.mute;ctx.fillText(r>=1000?(r/1000)+'km':r+'m',cx+4,cy-r*scale-3);
   }
   ctx.beginPath();ctx.moveTo(cx-rr,cy);ctx.lineTo(cx+rr,cy);ctx.moveTo(cx,cy-rr);ctx.lineTo(cx,cy+rr);ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.stroke();
-  ctx.fillStyle=C.mute;ctx.textAlign='center';ctx.fillText('N',cx,cy-rr+14);
+  ctx.fillStyle=C.mute;ctx.textAlign='center';ctx.fillText('N',cx+Math.sin(-up*D2R)*(rr-13),cy-Math.cos(-up*D2R)*(rr-13)+4);
   /* sweep */
   if(!RM&&!frozen){
     var a0=(ts/2600)%1*Math.PI*2;
@@ -1150,15 +1349,23 @@ function draw(ts){
     ctx.globalAlpha=1;
   }
   if(R.pos){
+    /* running area */
+    if(R.area){
+      var ao=tf(offsetM(R.pos,R.area.c)),AX=cx+ao.x*scale,AY=cy-ao.y*scale,AR=R.area.r*scale;
+      ctx.save();ctx.beginPath();ctx.arc(cx,cy,rr-1,0,Math.PI*2);ctx.clip();
+      ctx.setLineDash([7,6]);ctx.lineWidth=2;ctx.strokeStyle=C.gold;ctx.globalAlpha=0.75;ctx.beginPath();ctx.arc(AX,AY,AR,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);ctx.globalAlpha=0.55;ctx.fillStyle=C.gold;ctx.beginPath();ctx.arc(AX,AY,3,0,Math.PI*2);ctx.fill();
+      ctx.restore();ctx.globalAlpha=1;
+    }
     /* trail */
     if(R.trail.length>1){
       ctx.beginPath();
-      R.trail.forEach(function(p,i){var o=offsetM(R.pos,p),x=cx+o.x*scale,y=cy-o.y*scale;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+      R.trail.forEach(function(p,i){var o=tf(offsetM(R.pos,p)),x=cx+o.x*scale,y=cy-o.y*scale;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
       ctx.strokeStyle=C.player;ctx.globalAlpha=0.45;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;
     }
     /* destination flag */
     if(R.fin&&(!R.loop||R.returning)){
-      var fo=offsetM(R.pos,R.fin),fx=fo.x*scale,fy=-fo.y*scale,fl=Math.hypot(fx,fy),flim=rr-16,edge=fl>flim;
+      var fo=tf(offsetM(R.pos,R.fin)),fx=fo.x*scale,fy=-fo.y*scale,fl=Math.hypot(fx,fy),flim=rr-30,edge=fl>flim;
       if(edge){fx*=flim/fl;fy*=flim/fl}
       var FX=cx+fx,FY=cy+fy;
       ctx.strokeStyle=C.gold;ctx.fillStyle=C.gold;ctx.lineWidth=2;
@@ -1168,7 +1375,7 @@ function draw(ts){
     }
     /* monster */
     if(m){
-      var o=offsetM(R.pos,m),mx=o.x*scale,my=-o.y*scale,L=Math.hypot(mx,my),lim=rr-26;
+      var o=tf(offsetM(R.pos,m)),mx=o.x*scale,my=-o.y*scale,L=Math.hypot(mx,my),lim=rr-Math.max(26,8*Math.max(3,Math.round(w/88))+4);
       if(L>lim){mx*=lim/L;my*=lim/L}
       var X=cx+mx,Y=cy+my;
       ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(X,Y);ctx.strokeStyle=C.mon;ctx.globalAlpha=0.5;ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
@@ -1183,11 +1390,12 @@ function draw(ts){
       var pr=10+((ts/900)%1)*18;ctx.beginPath();ctx.arc(cx,cy,pr,0,Math.PI*2);ctx.strokeStyle=C.player;ctx.globalAlpha=1-(pr-10)/18;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;
     }
     if(R.heading!=null){
-      var th=R.heading*D2R;ctx.save();ctx.translate(cx,cy);ctx.rotate(th);
+      var th=(R.hdDisp-up)*D2R;ctx.save();ctx.translate(cx,cy);ctx.rotate(th);
       ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(6,-5);ctx.lineTo(-6,-5);ctx.closePath();ctx.fillStyle=C.player;ctx.fill();ctx.restore();
     }
     ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fillStyle=C.player;ctx.fill();ctx.strokeStyle=C.bg;ctx.lineWidth=2;ctx.stroke();
   }
+  ctx.restore();
 }
 
 /* ---------- controls ---------- */
@@ -1212,5 +1420,4 @@ $('#dex-back').onclick=function(){if(dexFrom==='#s-setup')paintSetup();show(dexF
 initSetup();
 })();
 </script>
-
 </body></html>
