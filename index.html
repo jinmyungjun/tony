@@ -333,15 +333,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="chips" id="rest-chips"></div>
     </div>
 
-    <div class="field">
-      <div class="top"><span class="badge b-ice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span class="lab">위치</span></div>
-      <div class="seg" role="group" aria-label="위치 모드">
-        <button id="m-gps" aria-pressed="true">GPS로 달리기</button>
-        <button id="m-demo" aria-pressed="false">데모 (가상 달리기)</button>
-      </div>
-      <div class="chips" id="sim-chips" hidden></div>
-      <p class="note" id="mode-note"></p>
-    </div>
+    <p class="note" style="margin-top:14px">GPS로 달려요. 시작할 때 위치와 모션 센서 권한을 물어볼 수 있어요. 방향은 달리는 중에는 GPS 이동 방향, 멈춰 있을 때는 나침반을 써요.</p>
 
     <div class="forecast"><canvas id="mascot" aria-hidden="true"></canvas><div class="bubble" id="forecast"></div></div>
     <p class="note" id="start-msg" style="margin-top:10px;color:var(--gold)" hidden></p>
@@ -453,7 +445,7 @@ var store={
   get:function(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
   set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
-var cfg=Object.assign({paceSec:360,goalType:'dist',goalDist:3,goalMin:30,rest:30,mode:'gps',simSpeed:30,dest:null,hdUp:true,area:null},store.get('rq_cfg',{}));
+var cfg=Object.assign({paceSec:360,goalType:'dist',goalDist:3,goalMin:30,rest:30,dest:null,hdUp:true,area:null},store.get('rq_cfg',{}));
 cfg.area=Object.assign({on:false,r:500,center:'start',c:null},cfg.area||{});
 if(cfg.goalType==='dest'){cfg.goalType='dist';cfg.destMode=(cfg.dest&&cfg.dest.loop)?'loop':'place'}
 if(cfg.dest&&cfg.dest.loop)cfg.dest=null;
@@ -705,7 +697,7 @@ function hold(btn,fn){
   btn.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();fn()}});
 }
 var clamp=function(v,a,b){return Math.max(a,Math.min(b,v))};
-var CHIP_REST=[0,30,60,90,120],CHIP_SIM=[10,30,60];
+var CHIP_REST=[0,30,60,90,120];
 
 function parseCoords(t){
   t=(t||'').trim();
@@ -789,13 +781,6 @@ function paintSetup(){
   $('#rest').value=cfg.rest;$('#rest').style.setProperty('--p',(cfg.rest/120*100)+'%');
   $('#rest-val').textContent=cfg.rest+'초';
   Array.prototype.forEach.call($('#rest-chips').children,function(b){b.setAttribute('aria-pressed',Number(b.dataset.v)===cfg.rest)});
-  var demo=cfg.mode==='demo';
-  $('#m-gps').setAttribute('aria-pressed',!demo);$('#m-demo').setAttribute('aria-pressed',demo);
-  $('#sim-chips').hidden=!demo;
-  Array.prototype.forEach.call($('#sim-chips').children,function(b){b.setAttribute('aria-pressed',Number(b.dataset.v)===cfg.simSpeed)});
-  $('#mode-note').textContent=demo
-    ?'가상의 러너가 몬스터를 향해 자동으로 달려요. 게임 흐름을 미리 확인할 때 쓰세요. 속도 배율을 고를 수 있어요.'
-    :'실제 위치로 달려요. 처음에 위치와 모션 센서 권한을 물어볼 수 있어요. 방향은 달리는 중에는 GPS 이동 방향, 멈춰 있을 때는 나침반을 써요. 위치 권한이 없으면 데모 모드로 시작합니다.';
   var d=150/cfg.paceSec*1000,txt;
   if(don){
     txt=loop?'반환점을 돌아 출발점에 도착하면 <b>보스 몬스터</b>가 기다려요!':'도착지에 닿으면 <b>보스 몬스터</b>가 기다려요!';
@@ -809,12 +794,12 @@ function paintSetup(){
 }
 function canStart(){
   var m=$('#start-msg');
-  if(cfg.destMode==='place'&&!cfg.dest&&cfg.mode==='gps'){
-    m.textContent='도착지를 먼저 정해 주세요. (또는 데모 모드로 체험해 보세요)';m.hidden=false;
+  if(cfg.destMode==='place'&&!cfg.dest){
+    m.textContent='도착지를 먼저 정해 주세요.';m.hidden=false;
     try{$('#destbox').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}
     return false;
   }
-  if(!destOn()&&cfg.area.on&&cfg.area.center==='custom'&&!cfg.area.c&&cfg.mode==='gps'){
+  if(!destOn()&&cfg.area.on&&cfg.area.center==='custom'&&!cfg.area.c){
     m.textContent='영역 중심을 먼저 정해 주세요. (또는 시작 위치 중심으로 바꿔 보세요)';m.hidden=false;
     try{$('#area-field').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}
     return false;
@@ -864,9 +849,6 @@ function initSetup(){
   $('#dest-q').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();findPlace()}});
   $('#rest').oninput=function(){cfg.rest=Number(this.value);paintSetup()};
   CHIP_REST.forEach(function(v){var b=document.createElement('button');b.textContent=v+'초';b.dataset.v=v;b.onclick=function(){cfg.rest=v;paintSetup()};$('#rest-chips').appendChild(b)});
-  CHIP_SIM.forEach(function(v){var b=document.createElement('button');b.textContent='×'+v;b.dataset.v=v;b.onclick=function(){cfg.simSpeed=v;paintSetup()};$('#sim-chips').appendChild(b)});
-  $('#m-gps').onclick=function(){cfg.mode='gps';paintSetup()};
-  $('#m-demo').onclick=function(){cfg.mode='demo';paintSetup()};
   $('#start').onclick=startRun;
   spriteCanvas($('#mascot'),MON[0],4,null);
   paintAvatar();
@@ -977,7 +959,7 @@ function compassHeading(alpha,beta,gamma){
 }
 function declin(){var p=R&&R.pos;if(p&&p.lat>32.5&&p.lat<39.5&&p.lng>123.5&&p.lng<132.5)return -8.3;return 0}
 function onOri(e){
-  if(!R||R.phase==='done'||R.demo)return;
+  if(!R||R.phase==='done')return;
   var h=null;
   if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading))h=e.webkitCompassHeading;
   else if((e.type==='deviceorientationabsolute'||e.absolute===true)&&e.alpha!=null&&e.beta!=null&&e.gamma!=null)h=compassHeading(e.alpha,e.beta,e.gamma);
@@ -1014,7 +996,7 @@ function updHeading(){
   var moving=R.speed>=1.5&&now-R.spdT<4000;
   if(moving&&R.gpsHd!=null&&now-R.gpsHdT<4000){h=R.gpsHd;src='gps'}
   else if(moving&&R.mvHd!=null&&now-R.mvT<8000){h=R.mvHd;src='mv'}
-  else if(!R.demo&&R.cmpHd!=null&&now-R.cmpT<2500){h=R.cmpHd;src='cmp'}
+  else if(R.cmpHd!=null&&now-R.cmpT<2500){h=R.cmpHd;src='cmp'}
   else if(R.mvHd!=null){h=R.mvHd;src='mv'}
   if(h==null){R.hdSrc='';return}
   R.heading=R.heading==null?h:wrapAng(R.heading+angDiff(R.heading,h)*0.4);
@@ -1025,38 +1007,75 @@ function relText(r){var a=Math.abs(r),sd=r>0?'오른쪽':'왼쪽';if(a<22)return
 function startRun(){
   if(!canStart())return;
   save();
-  if(cfg.mode!=='demo')startCompass();
+  startCompass();
+  try{var LN=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.registerPlugin('LocalNotifications');if(LN)LN.requestPermissions()}catch(e){}
   try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
   R={phase:'locating',paused:false,active:0,hunt:0,pausedMs:0,dist:0,huntDist:0,kills:0,bonus:0,exp:0,
-     pos:null,last:null,heading:null,trail:[],monster:null,restLeft:0,restTotal:0,log:[],demo:false,watch:null,wl:null,
+     pos:null,last:null,heading:null,trail:[],monster:null,restLeft:0,restTotal:0,log:[],watch:null,nwatch:null,wl:null,t0:performance.now(),locWarn:0,
      lastTick:performance.now(),rangeDisp:100,acc:null,lastKill:null,startLv:curLv(),savedDist:0,cmpHd:null,cmpT:0,gpsHd:null,gpsHdT:0,mvHd:null,mvT:0,anchor:null,speed:0,spdT:0,hdSrc:'',lastMoveT:0,hdDisp:null,area:null,
      loop:cfg.destMode==='loop',returning:false,fin:null,finStart:null,reachedDest:false};
   show('#s-run');setNotice('');$('#pause').hidden=true;
   $('#banner').hidden=true;
   $('#btn-end').innerHTML='종료';
-  if(cfg.mode==='demo'){startDemo('')}else{startGps()}
+  startGps();
   lock();
   clearInterval(tickIv);tickIv=setInterval(tick,200);
   cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
   render();
 }
-function startDemo(msg){
-  R.demo=true;if(msg)setNotice(msg);
-  onPos({lat:37.5665,lng:126.9780,acc:5});
+function abortRun(msg){
+  if(!R)return;
+  R.phase='done';stopGps();stopCompass();unlock();clearInterval(tickIv);cancelAnimationFrame(raf);
+  $('#pause').hidden=true;$('#radar-wrap').classList.remove('frozen');
+  R=null;paintSetup();show('#s-setup');
+  var m=$('#start-msg');m.textContent=msg;m.hidden=false;
+}
+var bgPlugin=null;
+function nativeBG(){
+  if(bgPlugin)return bgPlugin;
+  try{var c=window.Capacitor;if(c&&c.isNativePlatform&&c.isNativePlatform()&&c.registerPlugin)bgPlugin=c.registerPlugin('BackgroundGeolocation')}catch(e){}
+  return bgPlugin;
+}
+function startNativeGps(BG){
+  var got=false,mine=R;
+  BG.addWatcher({backgroundTitle:'런 퀘스트',backgroundMessage:'달리는 중이에요. 몬스터를 쫓고 있어요',requestPermissions:true,stale:false,distanceFilter:0},function(loc,err){
+    if(R!==mine||!R||R.phase==='done')return;
+    if(err){
+      if(!got){
+        var denied=err.code==='NOT_AUTHORIZED';
+        if(denied){try{BG.openSettings()}catch(e){}}
+        abortRun(denied?'위치 권한이 없어요. 설정에서 위치 권한을 허용한 뒤 다시 시작해 주세요.':'위치를 찾지 못했어요. 위치 서비스가 켜져 있는지 확인해 주세요.');
+      }
+      return;
+    }
+    got=true;
+    tick();
+    onPos({lat:loc.latitude,lng:loc.longitude,acc:loc.accuracy||999,speed:loc.speed,hd:loc.bearing});
+  }).then(function(id){
+    if(R===mine&&R&&R.phase!=='done')R.nwatch=id;
+    else{try{BG.removeWatcher({id:id})}catch(e){}}
+  }).catch(function(){if(R===mine)abortRun('위치를 시작하지 못했어요. 위치 권한과 위치 서비스를 확인해 주세요.')});
 }
 function startGps(){
-  if(!('geolocation' in navigator)){startDemo('이 기기에서는 위치를 쓸 수 없어 데모 모드로 시작했어요.');return}
-  var got=false;
+  var BG=nativeBG();
+  if(BG){startNativeGps(BG);return}
+  if(!('geolocation' in navigator)){abortRun('이 기기에서는 위치를 쓸 수 없어요.');return}
+  var got=false,mine=R;
   try{
     R.watch=navigator.geolocation.watchPosition(function(p){
       got=true;onPos({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy||999,speed:p.coords.speed,hd:p.coords.heading});
     },function(err){
-      if(!got&&!R.demo){stopGps();startDemo(err&&err.code===1?'위치 권한이 없어 데모 모드로 시작했어요. 실제 달리기는 브라우저에서 위치 권한을 허용해 주세요.':'위치를 찾지 못해 데모 모드로 시작했어요.')}
-      else if(got){setNotice('GPS 신호가 약해요. 하늘이 트인 곳으로 이동해 보세요.')}
+      if(R!==mine||!R)return;
+      if(!got)abortRun(err&&err.code===1?'위치 권한이 없어요. 브라우저(또는 앱) 설정에서 위치 권한을 허용한 뒤 다시 시작해 주세요. 미리보기 화면에서는 위치가 막혀 있을 수 있어요.':'위치를 찾지 못했어요. 위치 서비스가 켜져 있는지, 하늘이 트인 곳인지 확인해 주세요.');
+      else setNotice('GPS 신호가 약해요. 하늘이 트인 곳으로 이동해 보세요.');
     },{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
-  }catch(e){startDemo('위치를 쓸 수 없어 데모 모드로 시작했어요.')}
+  }catch(e){abortRun('위치를 쓸 수 없어요.')}
 }
-function stopGps(){if(R&&R.watch!=null){try{navigator.geolocation.clearWatch(R.watch)}catch(e){}R.watch=null}}
+function stopGps(){
+  if(!R)return;
+  if(R.watch!=null){try{navigator.geolocation.clearWatch(R.watch)}catch(e){}R.watch=null}
+  if(R.nwatch!=null){try{var BG=nativeBG();if(BG)BG.removeWatcher({id:R.nwatch})}catch(e){}R.nwatch=null}
+}
 function lock(){try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(function(l){if(R)R.wl=l}).catch(function(){})}catch(e){}}
 function unlock(){try{R&&R.wl&&R.wl.release()}catch(e){}}
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&R&&R.phase!=='done')lock()});
@@ -1069,13 +1088,12 @@ function onPos(p){
     if(p.acc>80){render();return}
     R.last=p;
     if(cfg.area&&cfg.area.on&&!destOn()){
-      var ctr=(cfg.area.center==='custom'&&cfg.area.c&&!R.demo)?{lat:cfg.area.c.lat,lng:cfg.area.c.lng}:{lat:p.lat,lng:p.lng};
+      var ctr=(cfg.area.center==='custom'&&cfg.area.c)?{lat:cfg.area.c.lat,lng:cfg.area.c.lng}:{lat:p.lat,lng:p.lng};
       R.area={c:ctr,r:cfg.area.r};
     }
     if(destOn()){
       if(R.loop)R.fin={lat:p.lat,lng:p.lng};
-      else if(R.demo||!cfg.dest)R.fin=dest(p,1500,Math.random()*360);
-      else R.fin={lat:cfg.dest.lat,lng:cfg.dest.lng};
+      else if(cfg.dest)R.fin={lat:cfg.dest.lat,lng:cfg.dest.lng};
     }
     spawn();render();return;
   }
@@ -1095,7 +1113,7 @@ function onPos(p){
 }
 function checkArrive(){
   var m=R.monster;if(!m)return;
-  var rad=R.demo?18:Math.max(20,Math.min(R.acc||0,40));
+  var rad=Math.max(20,Math.min(R.acc||0,40));
   if(hav(R.pos,m)<=rad)kill();
 }
 
@@ -1180,24 +1198,15 @@ function banner(a,b,ms){
 }
 function goalDone(){return destOn()?false:cfg.goalType==='dist'?R.dist>=cfg.goalDist*1000:cfg.goalType==='time'?R.active>=cfg.goalMin*60000:false}
 
-function simStep(dt){
-  if(R.phase!=='hunting'||!R.monster)return;
-  var v=1000/cfg.paceSec*cfg.simSpeed*dt/1000;
-  var d=hav(R.pos,R.monster),step=Math.min(v,d);
-  var b=bearing(R.pos,R.monster)+(Math.random()-0.5)*14;
-  var np=dest(R.pos,step,b);
-  onPos({lat:np.lat,lng:np.lng,acc:5});
-}
 function tick(){
   if(!R||R.phase==='done')return;
   var now=performance.now(),dt=now-R.lastTick;R.lastTick=now;
   if(R.paused){R.pausedMs+=dt;paintPause();return}
-  if(R.phase==='locating'){return}
+  if(R.phase==='locating'){if(!R.locWarn&&now-R.t0>45000){R.locWarn=1;setNotice('위치를 아직 잡지 못했어요. 하늘이 트인 곳으로 이동하거나 위치 서비스가 켜져 있는지 확인해 주세요.')}return}
   R.active+=dt;
   updHeading();
   if(R.phase==='hunting'){
     R.hunt+=dt;if(R.monster)R.monster.elapsed+=dt;
-    if(R.demo)simStep(dt);
   }else if(R.phase==='resting'){
     R.restLeft-=dt;
     if(R.restLeft<=0){spawn()}
@@ -1270,7 +1279,7 @@ function render(){
   $('#goal-fill').style.width=clamp(frac*100,0,100)+'%';
   document.querySelector('.goalbar').hidden=free;
   $('#goal-txt').textContent=gtxt;
-  $('#gps-chip').textContent=R.demo?'데모 ×'+cfg.simSpeed:(R.acc?'GPS ±'+Math.round(R.acc)+'m':'GPS 대기');
+  $('#gps-chip').textContent=R.acc?'GPS ±'+Math.round(R.acc)+'m':'GPS 대기';
   $('#hd-chip').textContent=R.hdSrc==='cmp'?'나침반':(R.hdSrc==='gps'||R.hdSrc==='mv')?'이동 방향':'방향 확인 중';
   $('#rd-mode').textContent=cfg.hdUp?'내 방향이 위 ↑':'북쪽이 위 ↑';
   var ac=$('#area-chip');ac.hidden=!(R.area&&R.pos);
@@ -1379,7 +1388,7 @@ function draw(ts){
       if(L>lim){mx*=lim/L;my*=lim/L}
       var X=cx+mx,Y=cy+my;
       ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(X,Y);ctx.strokeStyle=C.mon;ctx.globalAlpha=0.5;ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
-      var ar=Math.max(12,(R.demo?18:Math.max(20,Math.min(R.acc||0,40)))*scale);
+      var ar=Math.max(12,Math.max(20,Math.min(R.acc||0,40))*scale);
       ctx.beginPath();ctx.arc(X,Y,ar,0,Math.PI*2);ctx.strokeStyle=m.boss?C.gold:C.mon;ctx.setLineDash([3,4]);ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);
       var bob=(RM||frozen)?0:Math.sin(t/260)*2,sp=Math.max(3,Math.round(w/88));
       ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(X,Y+sp*6.6,sp*5.2,sp*1.3,0,0,Math.PI*2);ctx.fill();
